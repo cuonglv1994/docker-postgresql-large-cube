@@ -6,12 +6,15 @@ MAINTAINER unoexperto <unoexperto.support@mailnull.com>
 #   /etc/group:34:postgres:x:70:
 # the home directory for the postgres user, however, is not created by default
 # see https://github.com/docker-library/postgres/issues/274
+#RUN set -ex; \
+#	postgresHome="$(getent passwd postgres)"; \
+#	postgresHome="$(echo "$postgresHome" | cut -d: -f6)"; \
+#	[ "$postgresHome" = '/var/lib/postgresql' ]; \
+#	mkdir -p "$postgresHome"; \
+#	chown -R postgres:postgres "$postgresHome"
+
 RUN set -ex; \
-	postgresHome="$(getent passwd postgres)"; \
-	postgresHome="$(echo "$postgresHome" | cut -d: -f6)"; \
-	[ "$postgresHome" = '/var/lib/postgresql' ]; \
-	mkdir -p "$postgresHome"; \
-	chown -R postgres:postgres "$postgresHome"
+        adduser -u 1000 -h /var/lib/postgresql -s /bin/sh -D postgres
 
 # su-exec (gosu-compatible) is installed further down
 
@@ -22,8 +25,8 @@ ENV LANG en_US.utf8
 RUN mkdir /docker-entrypoint-initdb.d
 
 ENV PG_MAJOR 11
-ENV PG_VERSION 11.2
-ENV PG_SHA256 2676b9ce09c21978032070b6794696e0aa5a476e3d21d60afc036dc0a9c09405
+ENV PG_VERSION 11.8
+ENV PG_SHA256 eaf2f4329ccc349c89e950761b81daf8c99bb8966abcab5665ccd6ee95c77ae2
 
 RUN set -ex \
 	\
@@ -97,6 +100,7 @@ RUN set -ex \
 		--prefix=/usr/local \
 		--with-includes=/usr/local/include \
 		--with-libraries=/usr/local/lib \
+		--with-blocksize=32 \
 		\
 # these make our image abnormally large (at least 100MB larger), which seems uncouth for an "Alpine" (ie, "small") variant :)
 #		--with-krb5 \
@@ -110,7 +114,7 @@ RUN set -ex \
 		--with-libxml \
 		--with-libxslt \
 		--with-icu \
-    && sed -i 's/#define CUBE_MAX_DIM (100)/#define CUBE_MAX_DIM (2048)/' /usr/src/postgresql/contrib/cube/cubedata.h \
+    && sed -i 's/#define CUBE_MAX_DIM (100)/#define CUBE_MAX_DIM (4096)/' /usr/src/postgresql/contrib/cube/cubedata.h \
 	&& make -j "$(nproc)" world \
 	&& make install-world \
 	&& make -C contrib install \

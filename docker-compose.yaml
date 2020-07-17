@@ -1,0 +1,11 @@
+version: '3.1'
+  
+services:
+
+  db:
+    image: postgres-cube
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: asdfghjkl987654321
+    ports:
+      - 5432:5432

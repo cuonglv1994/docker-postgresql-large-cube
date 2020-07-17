@@ -27,6 +27,8 @@ RUN mkdir /docker-entrypoint-initdb.d
 ENV PG_MAJOR 11
 ENV PG_VERSION 11.8
 ENV PG_SHA256 eaf2f4329ccc349c89e950761b81daf8c99bb8966abcab5665ccd6ee95c77ae2
+ENV PG_BLKSZ 32
+ENV PG_CUBE_MAX_DIM 4096
 
 RUN set -ex \
 	\
@@ -100,7 +102,7 @@ RUN set -ex \
 		--prefix=/usr/local \
 		--with-includes=/usr/local/include \
 		--with-libraries=/usr/local/lib \
-		--with-blocksize=32 \
+		--with-blocksize=$PG_BLKSZ \
 		\
 # these make our image abnormally large (at least 100MB larger), which seems uncouth for an "Alpine" (ie, "small") variant :)
 #		--with-krb5 \
@@ -114,7 +116,7 @@ RUN set -ex \
 		--with-libxml \
 		--with-libxslt \
 		--with-icu \
-    && sed -i 's/#define CUBE_MAX_DIM (100)/#define CUBE_MAX_DIM (4096)/' /usr/src/postgresql/contrib/cube/cubedata.h \
+    && sed -i 's/#define CUBE_MAX_DIM (100)/#define CUBE_MAX_DIM ($PG_CUBE_MAX_DIM)/' /usr/src/postgresql/contrib/cube/cubedata.h \
 	&& make -j "$(nproc)" world \
 	&& make install-world \
 	&& make -C contrib install \
